@@ -16,7 +16,7 @@ On contraire, android and PC users will have encrypted files, and there's some w
 Changing the file name of the code without doing any alternation in the code itself would raise some error in detecting the working directory, I'm still working on solving that problem.
 
 ### 2. FOR WIN USERS: Remember to put Chinese font file in your working directory.
-And change corresponding code in line 220 and 159 to your desired font.
+And change corresponding code in line 220 and 159 (index not yet updated, find them in adjacent lines) to your desired font. Of course you can simply use your system font directory.
 
 
 ## About Copyrights and Usage (IMPORTANT)
