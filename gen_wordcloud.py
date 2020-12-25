@@ -5,8 +5,31 @@ import matplotlib.pyplot as plt
 from wordcloud import WordCloud, STOPWORDS, ImageColorGenerator
 import sqlite3 as db
 import os
+import sys
 import numpy as np
 from PIL import Image
+
+
+def check_words(msg):
+    state = True
+    strange_words = ['xml version',
+                     'sysmsg',
+                     '<emoji',
+                     '<location',
+                     '撤回了一条消息',
+                     'record fromUser',
+                     'createTime',
+                     '<img',
+                     'pattedUser',
+                     'quot wxid',
+                     '<appmsg',
+                     '<videomsg',
+                     '<voicemsg',
+                     ]
+    for _ in strange_words:
+        if _ in msg:
+            state = False
+    return state
 
 
 def get_sql_list(folder_dir):
@@ -52,11 +75,12 @@ def read_from_csv(file_dir):
 
 
 def data_loader():
+    run_path = sys.argv[0].split('gen_wordcloud.py')[0]
     is_csv = input('Choose your input format(entering figure 1 or 2):\n1.csv\t2.sqlite db\n').strip() == '1'
     if is_csv:
         msg = read_from_csv('my.csv')
     else:
-        dbs = [_ for _ in get_sql_list('/Users/leohe/Documents/WechatDB/DB') if 'message_' in _]
+        dbs = [_ for _ in get_sql_list(run_path) if 'message_' in _]
         msg_lists = []
         for database in dbs:
             print('Page {}\tDB:{}'.format(dbs.index(database)+1, database))
@@ -71,8 +95,9 @@ def data_loader():
         print('Presenting Your Chosen Page...')
         print(msg_lists[page - 1])
         choice = int(input('Choose the index your message locates').strip())
-        print('Choosing Message {}'.format(msg_lists[page - 1]['names'][choice]))
-        target = read_from_sql(dbs[page - 1], 'SELECT * from {}'.format(msg_lists[page - 1]['names'][choice]))
+        chat_name = msg_lists[page - 1]['names'][choice]
+        print('Choosing Message {}'.format(chat_name))
+        target = read_from_sql(dbs[page - 1], 'SELECT * from {}'.format(chat_name))
         msg_df = pd.DataFrame(target,
                          columns=[
                              'TableVer',
@@ -87,59 +112,56 @@ def data_loader():
                          ])
         msg_text = msg_df.loc[msg_df['Type'] == 1]
         msg = list(msg_text["Message"].values)
-    return msg
+    return msg, chat_name
 
 
 def main():
-    messages = data_loader()
+    messages, chat_name = data_loader()
     new_msg = []
     for _ in messages:
-        if 'xml version' in _:
-            pass
-        elif 'sysmsg' in _:
-            pass
-        elif '<emoji' in _:
-            pass
-        elif '<location' in _:
-            pass
-        elif '撤回了一条消息' in _:
-            pass
-        elif ':' in _:
-            proc = _.split(':\n')[-1]
-            new_msg += proc
-        else:
-            new_msg.append(_.strip())
-    #print(new_msg)
+        if check_words(_):
+            # print(_)
+            if ':\n' in _:
+                proc = _.split(':\n')[-1]
+                new_msg.append(proc)
+            else:
+                new_msg.append(_.strip())
+    # print(new_msg)
     str_messages = " ".join(new_msg)
 
     word_split_jieba = jieba.cut(str_messages, cut_all=False)
     stopwords = set()
 
-    stopwords.update(
+    stopwords.update([
         'Doge', 'Smile', 'ThumbsUp', 'Sub', 'Shy', 'Hurt',
-        '了', '吗', '咩', '你们', '我', '你', '的', '捂脸', '不', '没'
-    )
+        '了', '吗', '咩', '你们', '我', '你', '的', '捂脸', '不', '没', 'wxid', '旺柴',
+        '奸笑', '吧', '哦', '啊', '有', '没有', '在', '到', '是', '不是', '这个', '那个',
+        '可以', '可能', 'record fromUser', 'wxid_', 'quot wxid', 'createTime', '呲牙',
+        '这个', '那个', '这', '那', '和', '抠鼻', '发怒', '快哭', '快哭了', '就是', '所以', '也', '发抖'
+    ])
 
     # img = np.array(Image.open('2.jpg'))
     word_space = ' '.join(word_split_jieba)
     my_wordcloud = WordCloud(
-        width=1400,
-        height=800,
+        width=2560,
+        height=1440,
         background_color='black', # 设置背景颜色
         # mask=img,  # 背景图片
         max_words=200, # 设置最大显示的词数
         stopwords=stopwords, # 设置停用词
         # 设置字体格式，字体格式 .ttf文件需自己网上下载，最好将名字改为英文，中文名路径加载会出现问题。
         font_path='Songti.ttc',
-        max_font_size=200, # 设置字体最大值
+        max_font_size=300, # 设置字体最大值
         random_state=50, # 设置随机生成状态，即多少种配色方案
+        colormap='Blues'
         ).generate(word_space)
 
-    plt.imshow(my_wordcloud)
-    plt.axis('off')
-    plt.show()
-    my_wordcloud.to_file('pic.jpg')
+    #plt.imshow(my_wordcloud)
+    #plt.axis('off')
+    #plt.show()
+    my_wordcloud.to_file('{}.jpg'.format(chat_name))
 
 
 if __name__ == '__main__':
     main()
+
