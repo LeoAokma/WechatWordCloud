@@ -181,7 +181,8 @@ def generate_individual_word_cloud(chat, msg, stopword_set):
     member_names = []
     member_messages = []
     member_counts = []
-    os.mkdir('{}'.format(chat))
+    if not os.path.isdir('{}'.format(chat)):
+        os.mkdir('{}'.format(chat))
     for _ in msg:
         if check_words(_):
             if ':\n' in _:
