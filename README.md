@@ -20,4 +20,4 @@ And change corresponding code in line 220 and 159 to your desired font.
 
 
 ## About Copyrights and Usage (IMPORTANT)
-### Do not use it in any commercial activity unless it is authorized be me, namely github user LeoAokma. You can definitely use it for fun, but mind that you have to notice me if you are going to quote this project in your academic paper, course project and other educational and academic usage that needs citation.
+### DO NOT use it in any commercial activity unless it is authorized be me, namely github user LeoAokma. You can definitely use it for fun, but mind that you have to notice me if you are going to quote this project in your academic paper, course project and other educational and academic usage that needs citation.
