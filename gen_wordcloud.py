@@ -125,7 +125,7 @@ def data_loader():
     return msg, chat_name, is_group
 
 
-def generate_overall_word_cloud(chat, msg, stopword_set, img=None):
+def generate_overall_word_cloud(chat, msg, stopword_set, img=None, max_font=300, num_max=200):
     """
     Generating an overall word cloud of a message record regardless of the person who is speaking.
     This would generate an image file to the directory same as where your code locates.
@@ -140,10 +140,8 @@ def generate_overall_word_cloud(chat, msg, stopword_set, img=None):
             if ':\n' in _:
                 proc = _.split(':\n')[-1]
                 new_msg.append(proc)
-                print(proc)
             else:
                 new_msg.append(_.strip())
-                print(_.strip())
     str_messages = " ".join(new_msg)
     word_split_jieba = jieba.cut(str_messages, cut_all=False)
 
@@ -154,11 +152,11 @@ def generate_overall_word_cloud(chat, msg, stopword_set, img=None):
         height=1440,
         background_color='black',  # 设置背景颜色
         mask=img,  # 背景图片
-        max_words=200,  # 设置最大显示的词数
+        max_words=num_max,  # 设置最大显示的词数
         stopwords=stopword_set,  # 设置停用词
         # 设置字体格式，字体格式 .ttf文件需自己网上下载，最好将名字改为英文，中文名路径加载会出现问题。
         font_path='Songti.ttc',
-        max_font_size=300,  # 设置字体最大值
+        max_font_size=max_font,  # 设置字体最大值
         random_state=50,  # 设置随机生成状态，即多少种配色方案
         colormap='Blues'
     ).generate(word_space)
@@ -256,9 +254,15 @@ def main():
             print('Generating individual word cloud...')
             generate_individual_word_cloud(chat_name, messages, stopwords)
         else:
-            generate_overall_word_cloud(chat_name, messages, stopwords, img=np.array(Image.open('ccme-2018-bg.jpg')))
+            generate_overall_word_cloud(chat_name,
+                                        messages,
+                                        stopwords,
+                                        )
     else:
-        generate_overall_word_cloud(chat_name, messages, stopwords, img=np.array(Image.open('ccme-2018-bg.jpg')))
+        generate_overall_word_cloud(chat_name,
+                                    messages,
+                                    stopwords,
+                                    )
 
 
 if __name__ == '__main__':
