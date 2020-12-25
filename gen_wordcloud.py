@@ -203,12 +203,12 @@ def generate_individual_word_cloud(chat, msg, stopword_set):
     for msg in member_messages:
         member_name = member_names[member_messages.index(msg)]
         count = member_counts[member_messages.index(msg)]
-        if len(msg) != 0:
-            str_messages = " ".join(msg)
-            word_split_jieba = jieba.cut(str_messages, cut_all=False)
+        str_messages = " ".join(msg)
+        word_split_jieba = jieba.cut(str_messages, cut_all=False)
 
-            # img = np.array(Image.open('2.jpg'))
-            word_space = ' '.join(word_split_jieba)
+        # img = np.array(Image.open('2.jpg'))
+        word_space = ' '.join(word_split_jieba)
+        try:
             my_wordcloud = WordCloud(
                 width=2560,
                 height=1440,
@@ -227,6 +227,8 @@ def generate_individual_word_cloud(chat, msg, stopword_set):
             # plt.axis('off')
             # plt.show()
             my_wordcloud.to_file('{}/{}_{}.jpg'.format(chat, member_name, count))
+        except ValueError:
+            pass
 
 
 def main():
