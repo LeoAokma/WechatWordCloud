@@ -99,7 +99,6 @@ def data_loader():
         chat_name = msg_lists[page - 1]['names'][choice]
         print('Choosing Message {}'.format(chat_name))
         target = read_from_sql(dbs[page - 1], 'SELECT * from {}'.format(chat_name))
-        type_ls = read_from_sql(dbs[page - 1], 'SELECT * from sqlite_master')
         msg_df = pd.DataFrame(target,
                          columns=[
                              'TableVer',
@@ -112,17 +111,17 @@ def data_loader():
                              'Type',
                              'Des'
                          ])
-        type_df = pd.DataFrame(type_ls,
-                              columns=[
-                                  'Type',
-                                  'Name',
-                                  'tbl_name',
-                                  'rootpage',
-                                  'sql',
-                              ])
         msg_text = msg_df.loc[msg_df['Type'] == 1]
-        is_group = type_df.loc[type_df['Name'] == chat_name]['Type'].values == 'index'
         msg = list(msg_text["Message"].values)
+        cnt = 0
+        for _ in msg:
+            if 'wxid_' in _:
+                cnt +=1
+        ratio = cnt / len(msg)
+        if ratio >= 0.2:
+            is_group = True
+        else:
+            is_group = False
     return msg, chat_name, is_group
 
 
@@ -182,6 +181,7 @@ def generate_individual_word_cloud(chat, msg, stopword_set):
     member_names = []
     member_messages = []
     member_counts = []
+    os.mkdir('{}'.format(chat))
     for _ in msg:
         if check_words(_):
             if ':\n' in _:
@@ -202,30 +202,30 @@ def generate_individual_word_cloud(chat, msg, stopword_set):
     for msg in member_messages:
         member_name = member_names[member_messages.index(msg)]
         count = member_counts[member_messages.index(msg)]
-        str_messages = " ".join(msg)
-        word_split_jieba = jieba.cut(str_messages, cut_all=False)
+        if len(msg) != 0:
+            str_messages = " ".join(msg)
+            word_split_jieba = jieba.cut(str_messages, cut_all=False)
 
-        # img = np.array(Image.open('2.jpg'))
-        word_space = ' '.join(word_split_jieba)
-        my_wordcloud = WordCloud(
-            width=2560,
-            height=1440,
-            background_color='black',  # 设置背景颜色
-            # mask=img,  # 背景图片
-            max_words=200,  # 设置最大显示的词数
-            stopwords=stopword_set,  # 设置停用词
-            # 设置字体格式，字体格式 .ttf文件需自己网上下载，最好将名字改为英文，中文名路径加载会出现问题。
-            font_path='Songti.ttc',
-            max_font_size=300,  # 设置字体最大值
-            random_state=50,  # 设置随机生成状态，即多少种配色方案
-            colormap='Blues'
-        ).generate(word_space)
+            # img = np.array(Image.open('2.jpg'))
+            word_space = ' '.join(word_split_jieba)
+            my_wordcloud = WordCloud(
+                width=2560,
+                height=1440,
+                background_color='black',  # 设置背景颜色
+                # mask=img,  # 背景图片
+                max_words=200,  # 设置最大显示的词数
+                stopwords=stopword_set,  # 设置停用词
+                # 设置字体格式，字体格式 .ttf文件需自己网上下载，最好将名字改为英文，中文名路径加载会出现问题。
+                font_path='Songti.ttc',
+                max_font_size=300,  # 设置字体最大值
+                random_state=50,  # 设置随机生成状态，即多少种配色方案
+                colormap='Blues'
+            ).generate(word_space)
 
-        # plt.imshow(my_wordcloud)
-        # plt.axis('off')
-        # plt.show()
-        os.mkdir('{}'.format(chat))
-        my_wordcloud.to_file('{}_{}.jpg'.format(member_name, count))
+            # plt.imshow(my_wordcloud)
+            # plt.axis('off')
+            # plt.show()
+            my_wordcloud.to_file('{}/{}_{}.jpg'.format(chat, member_name, count))
 
 
 def main():
@@ -247,7 +247,9 @@ def main():
               ' do you want to generate the word cloud for every member individually?')
         is_indvidual = input('(Y/N)\n').strip().upper() == 'Y'
         if is_indvidual:
+            print('Generating overall word cloud...')
             generate_overall_word_cloud(chat_name, messages, stopwords)
+            print('Generating individual word cloud...')
             generate_individual_word_cloud(chat_name, messages, stopwords)
         else:
             generate_overall_word_cloud(chat_name, messages, stopwords)
