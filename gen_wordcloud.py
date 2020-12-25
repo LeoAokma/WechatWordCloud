@@ -79,6 +79,7 @@ def data_loader():
     is_csv = input('Choose your input format(entering figure 1 or 2):\n1.csv\t2.sqlite db\n').strip() == '1'
     if is_csv:
         msg = read_from_csv('my.csv')
+        chat_name = 'csv_chat'
     else:
         dbs = [_ for _ in get_sql_list(run_path) if 'message_' in _]
         msg_lists = []
@@ -98,6 +99,7 @@ def data_loader():
         chat_name = msg_lists[page - 1]['names'][choice]
         print('Choosing Message {}'.format(chat_name))
         target = read_from_sql(dbs[page - 1], 'SELECT * from {}'.format(chat_name))
+        type_ls = read_from_sql(dbs[page - 1], 'SELECT * from sqlite_master')
         msg_df = pd.DataFrame(target,
                          columns=[
                              'TableVer',
@@ -110,15 +112,31 @@ def data_loader():
                              'Type',
                              'Des'
                          ])
+        type_df = pd.DataFrame(type_ls,
+                              columns=[
+                                  'Type',
+                                  'Name',
+                                  'tbl_name',
+                                  'rootpage',
+                                  'sql',
+                              ])
         msg_text = msg_df.loc[msg_df['Type'] == 1]
+        is_group = type_df.loc[type_df['Name'] == chat_name]['Type'].values == 'index'
         msg = list(msg_text["Message"].values)
-    return msg, chat_name
+    return msg, chat_name, is_group
 
 
-def main():
-    messages, chat_name = data_loader()
+def generate_overall_word_cloud(chat, msg, stopword_set):
+    """
+    Generating an overall word cloud of a message record regardless of the person who is speaking.
+    This would generate an image file to the directory same as where your code locates.
+    :param chat: the specific chat name, str type.
+    :param msg: your message list loaded from csv or sql database.
+    :param stopword_set: stop word set.
+    :return: None
+    """
     new_msg = []
-    for _ in messages:
+    for _ in msg:
         if check_words(_):
             # print(_)
             if ':\n' in _:
@@ -126,12 +144,94 @@ def main():
                 new_msg.append(proc)
             else:
                 new_msg.append(_.strip())
-    # print(new_msg)
-    str_messages = " ".join(new_msg)
-
+    str_messages = " ".join(msg)
     word_split_jieba = jieba.cut(str_messages, cut_all=False)
-    stopwords = set()
 
+    # img = np.array(Image.open('2.jpg'))
+    word_space = ' '.join(word_split_jieba)
+    my_wordcloud = WordCloud(
+        width=2560,
+        height=1440,
+        background_color='black',  # 设置背景颜色
+        # mask=img,  # 背景图片
+        max_words=200,  # 设置最大显示的词数
+        stopwords=stopword_set,  # 设置停用词
+        # 设置字体格式，字体格式 .ttf文件需自己网上下载，最好将名字改为英文，中文名路径加载会出现问题。
+        font_path='Songti.ttc',
+        max_font_size=300,  # 设置字体最大值
+        random_state=50,  # 设置随机生成状态，即多少种配色方案
+        colormap='Blues'
+    ).generate(word_space)
+
+    # plt.imshow(my_wordcloud)
+    # plt.axis('off')
+    # plt.show()
+    my_wordcloud.to_file('{}.jpg'.format(chat))
+
+
+def generate_individual_word_cloud(chat, msg, stopword_set):
+    """
+    Generating word clouds of a message record individually for everyone who speaks in a message group.
+    Only works when target chat record belongs to a GROUP CHAT!
+    This would generate an image file to the directory same as where your code locates.
+    :param chat: the specific chat name, str type.
+    :param msg: your message list loaded from csv or sql database.
+    :param stopword_set: stop word set.
+    :return: None
+    """
+    member_names = []
+    member_messages = []
+    member_counts = []
+    for _ in msg:
+        if check_words(_):
+            if ':\n' in _:
+                name = _.split(':\n')[0]
+                proc = _.split(':\n')[1]
+            else:
+                name = 'yourself'
+                proc = _.strip()
+
+            if name not in member_names:
+                member_names.append(name)
+                member_messages.append([])
+                member_counts.append(0)
+
+            member_messages[member_names.index(name)].append(proc)
+            member_counts[member_names.index(name)] += 1
+
+    for msg in member_messages:
+        member_name = member_names[member_messages.index(msg)]
+        count = member_counts[member_messages.index(msg)]
+        str_messages = " ".join(msg)
+        word_split_jieba = jieba.cut(str_messages, cut_all=False)
+
+        # img = np.array(Image.open('2.jpg'))
+        word_space = ' '.join(word_split_jieba)
+        my_wordcloud = WordCloud(
+            width=2560,
+            height=1440,
+            background_color='black',  # 设置背景颜色
+            # mask=img,  # 背景图片
+            max_words=200,  # 设置最大显示的词数
+            stopwords=stopword_set,  # 设置停用词
+            # 设置字体格式，字体格式 .ttf文件需自己网上下载，最好将名字改为英文，中文名路径加载会出现问题。
+            font_path='Songti.ttc',
+            max_font_size=300,  # 设置字体最大值
+            random_state=50,  # 设置随机生成状态，即多少种配色方案
+            colormap='Blues'
+        ).generate(word_space)
+
+        # plt.imshow(my_wordcloud)
+        # plt.axis('off')
+        # plt.show()
+        os.mkdir('{}'.format(chat))
+        my_wordcloud.to_file('{}_{}.jpg'.format(member_name, count))
+
+
+def main():
+    messages, chat_name, is_group = data_loader()
+    # Define the stopwords:
+    stopwords = set()
     stopwords.update([
         'Doge', 'Smile', 'ThumbsUp', 'Sub', 'Shy', 'Hurt',
         '了', '吗', '咩', '你们', '我', '你', '的', '捂脸', '不', '没', 'wxid', '旺柴',
@@ -142,26 +242,17 @@ def main():
         '而且', '抠鼻', '两个', '什么', '吃瓜',
     ])
 
-    # img = np.array(Image.open('2.jpg'))
-    word_space = ' '.join(word_split_jieba)
-    my_wordcloud = WordCloud(
-        width=2560,
-        height=1440,
-        background_color='black', # 设置背景颜色
-        # mask=img,  # 背景图片
-        max_words=200, # 设置最大显示的词数
-        stopwords=stopwords, # 设置停用词
-        # 设置字体格式，字体格式 .ttf文件需自己网上下载，最好将名字改为英文，中文名路径加载会出现问题。
-        font_path='Songti.ttc',
-        max_font_size=300, # 设置字体最大值
-        random_state=50, # 设置随机生成状态，即多少种配色方案
-        colormap='Blues'
-        ).generate(word_space)
-
-    #plt.imshow(my_wordcloud)
-    #plt.axis('off')
-    #plt.show()
-    my_wordcloud.to_file('{}.jpg'.format(chat_name))
+    if is_group:
+        print('Chosen chat is detected as a group chat,'
+              ' do you want to generate the word cloud for every member individually?')
+        is_indvidual = input('(Y/N)\n').strip().upper() == 'Y'
+        if is_indvidual:
+            generate_overall_word_cloud(chat_name, messages, stopwords)
+            generate_individual_word_cloud(chat_name, messages, stopwords)
+        else:
+            generate_overall_word_cloud(chat_name, messages, stopwords)
+    else:
+        generate_overall_word_cloud(chat_name, messages, stopwords)
 
 
 if __name__ == '__main__':
