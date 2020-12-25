@@ -108,8 +108,8 @@ def data_loader():
                              'Message',
                              'Status',
                              'ImgStatus',
-                             'Type',
-                             'Des'
+                             'Des',
+                             'Type'
                          ])
         msg_text = msg_df.loc[msg_df['Type'] == 1]
         msg = list(msg_text["Message"].values)
@@ -125,7 +125,7 @@ def data_loader():
     return msg, chat_name, is_group
 
 
-def generate_overall_word_cloud(chat, msg, stopword_set):
+def generate_overall_word_cloud(chat, msg, stopword_set, img=None):
     """
     Generating an overall word cloud of a message record regardless of the person who is speaking.
     This would generate an image file to the directory same as where your code locates.
@@ -137,13 +137,14 @@ def generate_overall_word_cloud(chat, msg, stopword_set):
     new_msg = []
     for _ in msg:
         if check_words(_):
-            # print(_)
             if ':\n' in _:
                 proc = _.split(':\n')[-1]
                 new_msg.append(proc)
+                print(proc)
             else:
                 new_msg.append(_.strip())
-    str_messages = " ".join(msg)
+                print(_.strip())
+    str_messages = " ".join(new_msg)
     word_split_jieba = jieba.cut(str_messages, cut_all=False)
 
     # img = np.array(Image.open('2.jpg'))
@@ -152,7 +153,7 @@ def generate_overall_word_cloud(chat, msg, stopword_set):
         width=2560,
         height=1440,
         background_color='black',  # 设置背景颜色
-        # mask=img,  # 背景图片
+        mask=img,  # 背景图片
         max_words=200,  # 设置最大显示的词数
         stopwords=stopword_set,  # 设置停用词
         # 设置字体格式，字体格式 .ttf文件需自己网上下载，最好将名字改为英文，中文名路径加载会出现问题。
@@ -242,7 +243,7 @@ def main():
         '可以', '可能', 'record fromUser', 'wxid_', 'quot wxid', 'createTime', '呲牙',
         '这个', '那个', '这', '那', '和', '抠鼻', '发怒', '快哭', '快哭了', '就是', '所以', '也', '发抖', '还是', '把', '呢',
         '好', '去', '得', '不行', '行', '这样', '那样', '或者', '还', '那么', '一些', '还是', '又', '不过', 'Emm', '还要', '已经',
-        '而且', '抠鼻', '两个', '什么', '吃瓜',
+        '而且', '抠鼻', '两个', '什么', '吃瓜', '就', '他', '她',
     ])
 
     if is_group:
@@ -255,9 +256,9 @@ def main():
             print('Generating individual word cloud...')
             generate_individual_word_cloud(chat_name, messages, stopwords)
         else:
-            generate_overall_word_cloud(chat_name, messages, stopwords)
+            generate_overall_word_cloud(chat_name, messages, stopwords, img=np.array(Image.open('ccme-2018-bg.jpg')))
     else:
-        generate_overall_word_cloud(chat_name, messages, stopwords)
+        generate_overall_word_cloud(chat_name, messages, stopwords, img=np.array(Image.open('ccme-2018-bg.jpg')))
 
 
 if __name__ == '__main__':
