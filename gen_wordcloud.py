@@ -9,6 +9,10 @@ import sys
 import numpy as np
 from PIL import Image
 
+# bg_color = "#000000"
+bg_color = None
+plt_scale = 6
+
 
 def check_words(msg):
     state = True
@@ -150,7 +154,7 @@ def generate_overall_word_cloud(chat, msg, stopword_set, img=None, max_font=300,
     my_wordcloud = WordCloud(
         width=2560,
         height=1440,
-        background_color='black',  # 设置背景颜色
+        background_color=bg_color,  # 设置背景颜色
         mask=img,  # 背景图片
         max_words=num_max,  # 设置最大显示的词数
         stopwords=stopword_set,  # 设置停用词
@@ -158,13 +162,15 @@ def generate_overall_word_cloud(chat, msg, stopword_set, img=None, max_font=300,
         font_path='Songti.ttc',
         max_font_size=max_font,  # 设置字体最大值
         random_state=50,  # 设置随机生成状态，即多少种配色方案
-        colormap='Blues'
+        colormap='Greens',
+        scale=plt_scale,
+        mode='RGBA'
     ).generate(word_space)
 
     # plt.imshow(my_wordcloud)
     # plt.axis('off')
     # plt.show()
-    my_wordcloud.to_file('{}.jpg'.format(chat))
+    my_wordcloud.to_file('{}.png'.format(chat))
 
 
 def generate_individual_word_cloud(chat, msg, stopword_set):
@@ -211,7 +217,7 @@ def generate_individual_word_cloud(chat, msg, stopword_set):
             my_wordcloud = WordCloud(
                 width=2560,
                 height=1440,
-                background_color='black',  # 设置背景颜色
+                background_color=bg_color,  # 设置背景颜色
                 # mask=img,  # 背景图片
                 max_words=200,  # 设置最大显示的词数
                 stopwords=stopword_set,  # 设置停用词
@@ -219,13 +225,15 @@ def generate_individual_word_cloud(chat, msg, stopword_set):
                 font_path='Songti.ttc',
                 max_font_size=300,  # 设置字体最大值
                 random_state=50,  # 设置随机生成状态，即多少种配色方案
-                colormap='Blues'
+                colormap='Blues',
+                scale=plt_scale,
+                mode='RGBA'
             ).generate(word_space)
 
             # plt.imshow(my_wordcloud)
             # plt.axis('off')
             # plt.show()
-            my_wordcloud.to_file('{}/{}_{}.jpg'.format(chat, member_name, count))
+            my_wordcloud.to_file('{}/{}_{}.png'.format(chat, member_name, count))
         except ValueError:
             pass
 
