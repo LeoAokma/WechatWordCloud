@@ -3,10 +3,18 @@ Generating word clouds for WeChat message records.
 
 ## To do list
 ### 1. Get your wechat message database
-#### From iOS
+
 If you are using iOS device, then you can simply acquire all your message without any encryption by syncing your iphone data to your computer.
 
 On contraire, android and PC users will have encrypted files, and there's some way to crack then, but I can't make it clear in github, for it maybe dangerous for the users.
+#### From iOS
+Make an uncrypted backup, read the backup file by using some third-party softwares, then you can find the files in usr/documents/tencent.xin/ or something like that(I forgot the exact directory).
+
+#### From Win PC
+The typical directory is Documents/Wechat Files/ where you would find a series of sqlite db files with AES32 encryption. You need to crack the database to get your message. The key to the db is hidden in function createFileW when launching wechat and sending "request to login" signal(Please use softwares like x32dbg).
+
+#### From Android
+Still discovering...
 
 ### 2. Find the sqlite database files and then run the code in the same directory.
 
